@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "onlineeducation"
+version = "0.1.0"
+description = ""
+authors = ["maria_zhiganova <my.nik.mariann@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.13"
+djando = "^0.2"
+djangorestframework = "^3.16.1"
+python-dotenv = "^1.1.1"
+psycopg2 = "^2.9.10"
+pillow = "^11.3.0"
+black = "^25.9.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
