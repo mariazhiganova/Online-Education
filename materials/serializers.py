@@ -7,6 +7,7 @@ class LessonSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lesson
         fields = '__all__'
+        extra_kwargs = {'owner': {'read_only': True}}
 
 
 class CourseSerializer(serializers.ModelSerializer):
@@ -19,3 +20,5 @@ class CourseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Course
         fields = ('id', 'title', 'description', 'preview', 'lessons_count', 'lessons')
+
+        extra_kwargs = {'owner': {'read_only': True}}
