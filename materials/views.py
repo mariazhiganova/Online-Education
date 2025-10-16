@@ -13,14 +13,19 @@ class CourseViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action == 'create':
             self.permission_classes = [~IsModerator]
-        if self.action == 'destroy':
+        elif self.action == 'destroy':
             self.permission_classes = [~IsModerator, IsOwner]
-        elif self.action in ['update', 'list', 'retrieve']:
-            self.permission_classes = [IsModerator]
+        elif self.action in ['update', 'retrieve']:
+            self.permission_classes = [IsModerator | IsOwner]
         return super().get_permissions()
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        serializer.save(owner=self.request.user)
+
+    def get_queryset(self):
+        if self.request.user.groups.filter(name='Moderators').exists():
+            return Course.objects.all()
+        return Course.objects.filter(owner=self.request.user)
 
 
 class LessonCreateAPIView(CreateAPIView):
@@ -28,27 +33,31 @@ class LessonCreateAPIView(CreateAPIView):
     permission_classes = [~IsModerator]
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        serializer.save(owner=self.request.user)
 
 
 class LessonListAPIView(ListAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    permission_classes = [IsModerator, IsOwner]
+
+    def get_queryset(self):
+        if self.request.user.groups.filter(name='Moderators').exists():
+            return Lesson.objects.all()
+        return Lesson.objects.filter(owner=self.request.user)
 
 
 class LessonRetrieveAPIView(RetrieveAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    permission_classes = [IsModerator, IsOwner]
+    permission_classes = [IsModerator | IsOwner]
 
 
 class LessonUpdateAPIView(UpdateAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    permission_classes = [IsModerator, IsOwner]
+    permission_classes = [IsModerator | IsOwner]
 
 
 class LessonDestroyAPIView(DestroyAPIView):
     queryset = Lesson.objects.all()
-    permission_classes = [~IsModerator, [~IsModerator]]
+    permission_classes = [~IsModerator, IsOwner]
