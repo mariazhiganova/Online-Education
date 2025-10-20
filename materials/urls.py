@@ -3,7 +3,7 @@ from rest_framework.routers import SimpleRouter
 
 from materials.apps import MaterialsConfig
 from materials.views import CourseViewSet, LessonCreateAPIView, LessonListAPIView, LessonRetrieveAPIView, \
-    LessonDestroyAPIView, LessonUpdateAPIView
+    LessonDestroyAPIView, LessonUpdateAPIView, SubscriptionView
 
 app_name = MaterialsConfig.name
 
@@ -16,5 +16,7 @@ urlpatterns = [
                   path('lessons/<int:pk>/update/', LessonUpdateAPIView.as_view(), name='lessons_update'),
                   path('lessons/<int:pk>/details/', LessonRetrieveAPIView.as_view(), name='lessons_details'),
                   path('lessons/<int:pk>/delete/', LessonDestroyAPIView.as_view(), name='lessons_delete'),
+
+                  path('course/subscription/', SubscriptionView.as_view(), name='course_subscription'),
 
               ] + router.urls
