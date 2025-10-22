@@ -72,19 +72,29 @@ class Payment(models.Model):
         ('card', 'Безналичная оплата'),
     ]
 
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, verbose_name='Пользователь')
+    user = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Пользователь')
     payment_time = models.DateTimeField(auto_now_add=True, verbose_name='Время оплаты')
     course = models.ForeignKey(Course, on_delete=models.CASCADE, null=True, blank=True, verbose_name='Курс')
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, null=True, blank=True, verbose_name='Урок')
-    sum = models.PositiveIntegerField(verbose_name='Сумма оплаты')
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, verbose_name='Способ оплаты')
+    sum = models.PositiveIntegerField(verbose_name='Сумма оплаты', blank=True, null=True)
+
+    session_id = models.CharField(max_length=255, blank=True, null=True, verbose_name='ID сессии')
+    link = models.URLField(max_length=400, blank=True, null=True, verbose_name='Ссылка на оплату')
 
     class Meta:
         verbose_name = 'платёж'
         verbose_name_plural = 'платёжи'
 
     def __str__(self):
-        return f"Платеж {self.user} - {self.sum} руб."
+        return f"Платеж от {self.user} на сумму {self.sum} руб."
+
+    def save(self, *args, **kwargs):
+        if self.course:
+            self.sum = self.course.price
+        elif self.lesson:
+            self.sum = self.lesson.price
+        super().save(*args, **kwargs)
 
     def clean(self):
         if self.course and self.lesson:
