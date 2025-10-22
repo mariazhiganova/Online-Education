@@ -29,7 +29,8 @@ class UserUpdateAPIView(generics.UpdateAPIView):
     permission_classes = [IsOwner]
 
     def get_serializer_class(self):
-        if self.get_object() == self.request.user:
+        obj = self.get_object()
+        if obj == self.request.user:
             return UserPrivateSerializer
         return UserPublicSerializer
 
