@@ -7,6 +7,7 @@ class Course(models.Model):
     preview = models.ImageField(upload_to='materials/course_previews', null=True, blank=True,
                                 verbose_name='Превью курса', help_text='Загрузите фото для превью курса')
     owner = models.ForeignKey('users.CustomUser', on_delete=models.CASCADE, verbose_name='Владелец')
+    price = models.PositiveIntegerField(default=10000, verbose_name="Цена курса")
 
     def __str__(self):
         return f'Курс {self.title}'
@@ -24,6 +25,7 @@ class Lesson(models.Model):
     video_url = models.URLField(verbose_name='Ссылка на видео')
     course = models.ForeignKey(Course, on_delete=models.CASCADE, verbose_name='Курс', help_text='Выберите курс')
     owner = models.ForeignKey('users.CustomUser', on_delete=models.CASCADE, verbose_name='Владелец')
+    price = models.PositiveIntegerField(default=1000, verbose_name="Цена урока")
 
     def __str__(self):
         return f'Урок {self.title}'
