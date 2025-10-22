@@ -7,7 +7,8 @@ class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
         fields = '__all__'
-        extra_kwargs = {'user': {'read_only': True}}
+        extra_kwargs = {'user': {'read_only': True},
+                        'sum': {'read_only': True}}
 
 
 class UserPublicSerializer(serializers.ModelSerializer):
