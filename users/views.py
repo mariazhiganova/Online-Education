@@ -6,7 +6,7 @@ from rest_framework.permissions import AllowAny
 from users.models import CustomUser, Payment
 from users.permissions import IsOwner
 from users.serializers import PaymentSerializer, UserPublicSerializer, UserPrivateSerializer
-from users.services import create_stripe_price, create_stripe_sessions
+from users.services import create_stripe_price, create_stripe_sessions, create_stripe_product
 
 
 class UserCreateAPIView(generics.CreateAPIView):
@@ -46,11 +46,16 @@ class PaymentCreateAPIView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         payment = serializer.save(user=self.request.user)
-        price = create_stripe_price(payment.sum)
+        product = create_stripe_product(
+            name=f'Оплата: {payment.course.title if payment.course else payment.lesson.title}',
+            metadata={'payment_id': payment.id}
+        )
+        price = create_stripe_price(product.id, payment.sum)
         session_id, payment_link = create_stripe_sessions(price)
         payment.session_id = session_id
         payment.link = payment_link
         payment.save()
+
 
 class PaymentListAPIView(generics.ListAPIView):
     queryset = Payment.objects.all()
