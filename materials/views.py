@@ -6,6 +6,7 @@ from rest_framework.views import APIView
 from materials.models import Course, Lesson, Subscription
 from materials.pagination import MaterialsPagination
 from materials.serializers import CourseSerializer, LessonSerializer
+from materials.tasks import send_subscription_mail
 from users.permissions import IsModerator, IsOwner
 
 
@@ -30,6 +31,10 @@ class CourseViewSet(viewsets.ModelViewSet):
         if self.request.user.groups.filter(name='Moderators').exists():
             return Course.objects.all()
         return Course.objects.filter(owner=self.request.user)
+
+    def perform_update(self, serializer):
+        course = serializer.save()
+        send_subscription_mail.delay(course.id)
 
 
 class LessonCreateAPIView(CreateAPIView):
