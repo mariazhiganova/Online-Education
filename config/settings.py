@@ -177,3 +177,10 @@ EMAIL_USE_SSL = False
 EMAIL_HOST_USER = 'my.nik.mariann@gmail.com'
 EMAIL_HOST_PASSWORD = os.getenv('MY_EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+CELERY_BEAT_SCHEDULE = {
+    'task-name': {
+        'task': 'users.tasks.block_inactive_users',
+        'schedule': timedelta(days=7),
+    },
+}
