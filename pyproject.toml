@@ -20,6 +20,7 @@ drf-yasg = "^1.21.11"
 stripe = "^13.0.1"
 celery = "^5.5.3"
 redis = "^7.0.1"
+django-celery-beat = "^2.8.1"
 
 
 [build-system]
