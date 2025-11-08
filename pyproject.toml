@@ -6,11 +6,11 @@ authors = ["maria_zhiganova <my.nik.mariann@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.13"
+python = ">=3.11,<3.14"
 djando = "^0.2"
 djangorestframework = "^3.16.1"
 python-dotenv = "^1.1.1"
-psycopg2 = "^2.9.10"
+psycopg2-binary = "^2.9.10"
 pillow = "^11.3.0"
 black = "^25.9.0"
 django-filter = "^25.2"
