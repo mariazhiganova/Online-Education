@@ -1,0 +1,54 @@
+version: '3.9'
+
+services:
+  web:
+    build: .  # Собрать образ из Dockerfile в текущей директории
+    command: >
+      bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+      # Выполнить миграции и запустить сервер разработки
+    env_file:
+      - .env  # Загрузить переменные окружения из файла .env
+    volumes:
+      - .:/code  # Синхронизировать текущую директорию с /code в контейнере
+    ports:
+      - "8000:8000"  # Пробросить порт 8000 хоста на порт 8000 контейнера
+    depends_on:
+      - db  # Ждать запуска базы данных
+      - redis  # Ждать запуска Redis
+
+
+  db:
+    image: postgres:15  # Использовать официальный образ PostgreSQL версии 15
+    env_file:
+      - .env  # Переменные окружения для настройки БД
+    volumes:
+      - postgres_data:/var/lib/postgresql/data  # Постоянное хранилище для данных БД
+    expose:
+      - "5432"  # Открыть порт 5432 для других контейнеров
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]  # Проверка готовности БД
+      interval: 30s  # Интервал проверки - 30 секунд
+      timeout: 10s   # Таймаут проверки - 10 секунд
+      retries: 5     # Количество попыток
+
+
+  redis:
+    image: redis:7  # Использовать официальный образ Redis версии 7
+    expose:
+      - "6379"  # Открыть порт 6379 для других контейнеров
+
+
+  celery:
+    build: .  # Собрать образ из Dockerfile в текущей директории
+    command: celery -A config worker -l INFO  # Запустить Celery worker
+    env_file:
+      - .env  # Загрузить переменные окружения из файла .env
+    volumes:
+      - .:/code  # Синхронизировать текущую директорию с /code в контейнере
+    depends_on:
+      - db  # Ждать запуска базы данных
+      - redis  # Ждать запуска Redis
+
+
+volumes:
+  postgres_data:  # Объявить постоянное хранилище для данных PostgreSQL
