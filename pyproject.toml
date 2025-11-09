@@ -6,13 +6,21 @@ authors = ["maria_zhiganova <my.nik.mariann@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.13"
+python = ">=3.11,<3.14"
 djando = "^0.2"
 djangorestframework = "^3.16.1"
 python-dotenv = "^1.1.1"
-psycopg2 = "^2.9.10"
+psycopg2-binary = "^2.9.10"
 pillow = "^11.3.0"
 black = "^25.9.0"
+django-filter = "^25.2"
+djangorestframework-simplejwt = "^5.5.1"
+coverage = "^7.11.0"
+drf-yasg = "^1.21.11"
+stripe = "^13.0.1"
+celery = "^5.5.3"
+redis = "^7.0.1"
+django-celery-beat = "^2.8.1"
 
 
 [build-system]

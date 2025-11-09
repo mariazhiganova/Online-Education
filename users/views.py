@@ -1,3 +1,65 @@
-from django.shortcuts import render
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import generics
+from rest_framework.filters import OrderingFilter
+from rest_framework.permissions import AllowAny
 
-# Create your views here.
+from users.models import CustomUser, Payment
+from users.permissions import IsOwner
+from users.serializers import PaymentSerializer, UserPublicSerializer, UserPrivateSerializer
+from users.services import create_stripe_price, create_stripe_sessions, create_stripe_product
+
+
+class UserCreateAPIView(generics.CreateAPIView):
+    serializer_class = UserPrivateSerializer
+    permission_classes = [AllowAny]
+
+    def perform_create(self, serializer):
+        password = serializer.validated_data['password']
+        user = serializer.save(is_active=True)
+        user.set_password(password)
+        user.save()
+
+
+class UserRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = CustomUser.objects.all()
+    serializer_class = UserPrivateSerializer
+
+
+class UserUpdateAPIView(generics.UpdateAPIView):
+    queryset = CustomUser.objects.all()
+    permission_classes = [IsOwner]
+
+    def get_serializer_class(self):
+        obj = self.get_object()
+        if obj == self.request.user:
+            return UserPrivateSerializer
+        return UserPublicSerializer
+
+
+class UserDestroyAPIView(generics.DestroyAPIView):
+    queryset = CustomUser.objects.all()
+    permission_classes = [IsOwner]
+
+
+class PaymentCreateAPIView(generics.CreateAPIView):
+    serializer_class = PaymentSerializer
+
+    def perform_create(self, serializer):
+        payment = serializer.save(user=self.request.user)
+        product = create_stripe_product(
+            name=f'Оплата: {payment.course.title if payment.course else payment.lesson.title}',
+            metadata={'payment_id': payment.id}
+        )
+        price = create_stripe_price(product.id, payment.sum)
+        session_id, payment_link = create_stripe_sessions(price)
+        payment.session_id = session_id
+        payment.link = payment_link
+        payment.save()
+
+
+class PaymentListAPIView(generics.ListAPIView):
+    queryset = Payment.objects.all()
+    serializer_class = PaymentSerializer
+    filter_backends = [OrderingFilter, DjangoFilterBackend]
+    filterset_fields = ['course', 'lesson', 'payment_method']
+    ordering_fields = ['payment_time']

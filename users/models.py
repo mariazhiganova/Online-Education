@@ -1,9 +1,36 @@
+from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from rest_framework.exceptions import ValidationError
+
+from materials.models import Course, Lesson
+
+
+class CustomUserManager(BaseUserManager):
+    def create_user(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError('Email обязателен')
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save()
+        return user
+
+    def create_superuser(self, email, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('is_active', True)
+        return self.create_user(email, password, **extra_fields)
 
 
 class CustomUser(AbstractUser):
-    username = None
+    username = models.CharField(
+        max_length=150,
+        unique=True,
+        blank=True,
+        null=True,
+        default=None
+    )
     email = models.EmailField(
         unique=True, verbose_name="Почта", help_text="Укажите почту"
     )
@@ -32,6 +59,45 @@ class CustomUser(AbstractUser):
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 
+    objects = CustomUserManager()
+
     class Meta:
         verbose_name = 'пользователь'
         verbose_name_plural = 'пользователи'
+
+
+class Payment(models.Model):
+    PAYMENT_METHOD_CHOICES = [
+        ('cash', 'Наличные'),
+        ('card', 'Безналичная оплата'),
+    ]
+
+    user = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Пользователь')
+    payment_time = models.DateTimeField(auto_now_add=True, verbose_name='Время оплаты')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, null=True, blank=True, verbose_name='Курс')
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, null=True, blank=True, verbose_name='Урок')
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, verbose_name='Способ оплаты')
+    sum = models.PositiveIntegerField(verbose_name='Сумма оплаты', blank=True, null=True)
+
+    session_id = models.CharField(max_length=255, blank=True, null=True, verbose_name='ID сессии')
+    link = models.URLField(max_length=500, blank=True, null=True, verbose_name='Ссылка на оплату')
+
+    class Meta:
+        verbose_name = 'платёж'
+        verbose_name_plural = 'платёжи'
+
+    def __str__(self):
+        return f"Платеж от {self.user} на сумму {self.sum} руб."
+
+    def save(self, *args, **kwargs):
+        if self.course:
+            self.sum = self.course.price
+        elif self.lesson:
+            self.sum = self.lesson.price
+        super().save(*args, **kwargs)
+
+    def clean(self):
+        if self.course and self.lesson:
+            raise ValidationError('Необходимо выбрать одно: или курс или урок')
+        if not self.course and not self.lesson:
+            raise ValidationError('Необходимо указать что-то одно: курс или урок')
