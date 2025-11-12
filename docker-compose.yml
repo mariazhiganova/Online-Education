@@ -1,21 +1,25 @@
-version: '3.9'
+version: '3.9'  # Версия формата docker-compose
 
 services:
   web:
     build: .  # Собрать образ из Dockerfile в текущей директории
     command: >
-      bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
-      # Выполнить миграции и запустить сервер разработки
+      bash -c "python manage.py collectstatic --noinput && 
+               python manage.py migrate && 
+               gunicorn config.wsgi:application --bind 0.0.0.0:8000"
+      # collectstatic - собрать статические файлы
+      # migrate - применить миграции БД  
+      # gunicorn - запуск продакшн-сервера
     env_file:
       - .env  # Загрузить переменные окружения из файла .env
     volumes:
-      - .:/code  # Синхронизировать текущую директорию с /code в контейнере
-    ports:
-      - "8000:8000"  # Пробросить порт 8000 хоста на порт 8000 контейнера
+      - .:/app  # Синхронизировать текущую директорию с /app в контейнере
+      - static_volume:/app/staticfiles  # Общее хранилище для статических файлов
+    expose:
+      - "8000"  # Открыть порт 8000 для других контейнеров (не для хоста)
     depends_on:
       - db  # Ждать запуска базы данных
       - redis  # Ждать запуска Redis
-
 
   db:
     image: postgres:15  # Использовать официальный образ PostgreSQL версии 15
@@ -31,12 +35,10 @@ services:
       timeout: 10s   # Таймаут проверки - 10 секунд
       retries: 5     # Количество попыток
 
-
   redis:
     image: redis:7  # Использовать официальный образ Redis версии 7
     expose:
       - "6379"  # Открыть порт 6379 для других контейнеров
-
 
   celery:
     build: .  # Собрать образ из Dockerfile в текущей директории
@@ -44,11 +46,21 @@ services:
     env_file:
       - .env  # Загрузить переменные окружения из файла .env
     volumes:
-      - .:/code  # Синхронизировать текущую директорию с /code в контейнере
+      - .:/app  # Синхронизировать текущую директорию с /app в контейнере
     depends_on:
       - db  # Ждать запуска базы данных
       - redis  # Ждать запуска Redis
 
+  nginx:
+    build:
+      context: ./nginx  # Собрать образ из Dockerfile в папке nginx
+    ports:
+      - "80:80"  # Пробросить порт 80 хоста на порт 80 контейнера
+    volumes:
+      - static_volume:/app/staticfiles  # Общее хранилище статических файлов
+    depends_on:
+      - web  # Ждать запуска Django-приложения
 
 volumes:
   postgres_data:  # Объявить постоянное хранилище для данных PostgreSQL
+  static_volume:  # Объявить общее хранилище для статических файлов
