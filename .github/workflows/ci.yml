@@ -29,6 +29,7 @@ jobs:
         env: # Переменные окружения для подключения к сервисам
           SECRET_KEY: ${{ secrets.SECRET_KEY }}  # ← ДОБАВЬ ЭТО
           DEBUG: "False"
+          USE_SQLITE: "true"
 
         run: |
           poetry run python manage.py migrate  # Применение миграций БД

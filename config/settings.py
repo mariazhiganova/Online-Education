@@ -187,7 +187,7 @@ CELERY_BEAT_SCHEDULE = {
 
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-if 'test' in sys.argv:
+if 'test' in sys.argv or os.environ.get('USE_SQLITE'):
     DATABASES['default'] = {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'test_db.sqlite3',
