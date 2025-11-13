@@ -7,6 +7,32 @@ jobs:
   test:
     runs-on: ubuntu-latest  # Запускать на последней версии Ubuntu
 
+    # ↓ ДОБАВЬ СЕКЦИЮ services ДЛЯ POSTGRESQL ↓
+    services:
+      # Сервис PostgreSQL для тестовой базы данных
+      postgres:
+        # Используем официальный образ PostgreSQL 15 версии
+        image: postgres:15
+        # Переменные окружения для настройки PostgreSQL
+        env:
+          # Имя базы данных, которая будет создана при запуске
+          POSTGRES_DB: test_db
+          # Имя пользователя БД (стандартный пользователь postgres)
+          POSTGRES_USER: postgres
+          # Пароль пользователя БД
+          POSTGRES_PASSWORD: postgres
+          # Разрешаем подключения без пароля для localhost (безопасно в CI/CD)
+          POSTGRES_HOST_AUTH_METHOD: trust
+        # Настройки health check для автоматической проверки готовности БД
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        # Пробрасываем порт 5432 из контейнера на хост (runner)
+        ports:
+          - 5432:5432
+
     steps:
       # Шаг 1: Клонирование репозитория
       - name: Check out code
@@ -18,20 +44,23 @@ jobs:
         with:
           python-version: '3.11'  # Версия Python (должна совпадать с проектом)
 
-      # Шаг 3: Установка зависимостей через Poetry
-      - name: Install dependencies
-        run: |
-          pip install poetry  # Установка менеджера зависимостей Poetry
-          poetry install --no-root  # Установка зависимостей проекта
-
+      # Шаг 3: Ожидание готовности PostgreSQL
       - name: Wait for PostgreSQL
         run: |
+          # Обновляем пакеты и устанавливаем PostgreSQL клиент
           sudo apt-get update
           sudo apt-get install -y postgresql-client
+          # Ждем пока PostgreSQL будет готов принимать подключения (макс 60 секунд)
           timeout 60s bash -c 'until pg_isready -h localhost -p 5432; do echo "Waiting for PostgreSQL..."; sleep 2; done'
           echo "PostgreSQL is ready!"
 
-      # Шаг 4: Запуск миграций и тестов
+      # Шаг 4: Установка зависимостей через Poetry
+      - name: Install dependencies
+        run: |
+          pip install poetry  # Установка менеджера зависимостей Poetry
+          poetry install --no-root  # Установка зависимостей проекта (без текущего пакета)
+
+      # Шаг 5: Запуск миграций и тестов
       - name: Run migrations and tests
         env:
           # Имя базы данных (должно совпадать с POSTGRES_DB выше)
@@ -48,7 +77,6 @@ jobs:
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
           # Режим отладки выключен для тестов
           DEBUG: "False"
-          # Команды для выполнения
         run: |
           # Применяем миграции к тестовой базе данных
           poetry run python manage.py migrate
