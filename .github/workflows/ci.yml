@@ -8,6 +8,8 @@ jobs:
     runs-on: ubuntu-latest  # Запускать на последней версии Ubuntu
     env:
       SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      DEBUG: "False"
+      DATABASE_URL: "sqlite:///db.sqlite3"
 
     # Сервисы, которые нужны для тестов (PostgreSQL и Redis)
     services:
