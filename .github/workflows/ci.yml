@@ -6,10 +6,6 @@ jobs:
   # Job для запуска тестов
   test:
     runs-on: ubuntu-latest  # Запускать на последней версии Ubuntu
-    env:
-      SECRET_KEY: ${{ secrets.SECRET_KEY }}
-      DEBUG: "False"
-      DATABASE_URL: "sqlite:///db.sqlite3"
 
     # Сервисы, которые нужны для тестов (PostgreSQL и Redis)
     services:
@@ -19,6 +15,7 @@ jobs:
           POSTGRES_DB: test_db  # Имя тестовой базы данных
           POSTGRES_USER: postgres  # Пользователь БД
           POSTGRES_PASSWORD: postgres  # Пароль БД
+
         options: >-  # Настройки health check
           --health-cmd pg_isready
           --health-interval 10s
@@ -52,16 +49,20 @@ jobs:
       - name: Install dependencies
         run: |
           pip install poetry  # Установка менеджера зависимостей Poetry
-          poetry install  # Установка зависимостей проекта
+          poetry install --no-root  # Установка зависимостей проекта
 
       # Шаг 4: Запуск миграций и тестов
       - name: Run migrations and tests
-        run: |
-          poetry run python manage.py migrate  # Применение миграций БД
-          poetry run python manage.py test  # Запуск тестов Django
         env: # Переменные окружения для подключения к сервисам
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
           REDIS_URL: redis://localhost:6379
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}  # ← ДОБАВЬ ЭТО
+          DEBUG: "False"
+
+        run: |
+          poetry run python manage.py migrate  # Применение миграций БД
+          poetry run python manage.py test  # Запуск тестов Django
+
 
   # Job для проверки качества кода (линтер)
   lint:
