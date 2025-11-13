@@ -52,15 +52,15 @@ services:
       - redis  # Ждать запуска Redis
 
   nginx:
-    build:
-      context: ./nginx  # Собрать образ из Dockerfile в папке nginx
+    image: nginx:stable-alpine # Скачиваем готовый образ nginx
     ports:
       - "80:80"  # Пробросить порт 80 хоста на порт 80 контейнера
     volumes:
-      - static_volume:/app/staticfiles  # Общее хранилище статических файлов
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf # Взять настройки nginx из проекта и отнести в контейнер
+      - staticfiles:/app/staticfiles  # Общее хранилище статических файлов
     depends_on:
       - web  # Ждать запуска Django-приложения
 
 volumes:
   postgres_data:  # Объявить постоянное хранилище для данных PostgreSQL
-  static_volume:  # Объявить общее хранилище для статических файлов
+  staticfiles:  # Объявить общее хранилище для статических файлов
