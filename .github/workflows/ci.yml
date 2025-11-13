@@ -26,13 +26,27 @@ jobs:
 
       # Шаг 4: Запуск миграций и тестов
       - name: Run migrations and tests
-        env: # Переменные окружения для подключения к сервисам
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}  # ← ДОБАВЬ ЭТО
+        env:
+          # Имя базы данных (должно совпадать с POSTGRES_DB выше)
+          DATABASE_NAME: test_db
+          # Пользователь БД (должен совпадать с POSTGRES_USER выше)
+          DATABASE_USER: postgres
+          # Пароль БД (должен совпадать с POSTGRES_PASSWORD выше)
+          DATABASE_PASSWORD: postgres
+          # Хост БД - localhost, так как PostgreSQL запущен в том же runner
+          DATABASE_HOST: localhost
+          # Порт БД - 5432, так как мы пробросили этот порт
+          DATABASE_PORT: 5432
+          # Секретный ключ Django из GitHub Secrets
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          # Режим отладки выключен для тестов
           DEBUG: "False"
-          USE_SQLITE: "true"
-
+          # Команды для выполнения
         run: |
-          poetry run python manage.py test  # Запуск тестов Django
+          # Применяем миграции к тестовой базе данных
+          poetry run python manage.py migrate
+          # Запускаем тесты Django
+          poetry run python manage.py test
 
 
   # Job для проверки качества кода (линтер)
