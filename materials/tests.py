@@ -10,6 +10,10 @@ class MaterialsTestCase(APITestCase):
 
     def setUp(self):
         self.user = CustomUser.objects.create_user(email='testuser@mail.com', password='testuser123')
+        self.user.is_superuser = True
+        self.user.is_staff = True
+        self.user.save()
+
         self.course = Course.objects.create(title='test course 1', description='test course', owner=self.user)
         self.existing_lesson_1 = Lesson.objects.create(
             title="Existing lesson",
