@@ -24,6 +24,13 @@ jobs:
           pip install poetry  # Установка менеджера зависимостей Poetry
           poetry install --no-root  # Установка зависимостей проекта
 
+      - name: Wait for PostgreSQL
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+          timeout 60s bash -c 'until pg_isready -h localhost -p 5432; do echo "Waiting for PostgreSQL..."; sleep 2; done'
+          echo "PostgreSQL is ready!"
+
       # Шаг 4: Запуск миграций и тестов
       - name: Run migrations and tests
         env:
