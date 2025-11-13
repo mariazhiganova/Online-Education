@@ -6,6 +6,8 @@ jobs:
   # Job для запуска тестов
   test:
     runs-on: ubuntu-latest  # Запускать на последней версии Ubuntu
+    env:
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
     # Сервисы, которые нужны для тестов (PostgreSQL и Redis)
     services:
