@@ -56,6 +56,7 @@ docker-compose ps
 - db - база данных
 - redis - кэш и очереди задач
 - celery - фоновые задачи
+- nginx
 
 #### Проверить логи можно следующей командой:
 
@@ -110,6 +111,68 @@ http://localhost:8000/swagger/
 ```
 http://localhost:8000/redoc/
 ```
+
+## Настройка удаленного сервера
+#### Требования к серверу
+
+    Ubuntu 20.04+
+
+    Docker и Docker Compose
+
+    Открытые порты: 80 (HTTP), 443 (HTTPS), 22 (SSH)
+
+#### Установка на сервер
+
+## Обновление и установка Docker
+```
+sudo apt update && sudo apt upgrade -y
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+```
+
+## Установка Docker Compose
+```
+sudo apt install docker-compose-plugin
+```
+
+## Добавление пользователя в группу docker
+```
+sudo usermod -aG docker $USER
+```
+
+## Настройка безопасности
+```
+SSH доступ только по ключам
+
+Firewall: sudo ufw allow 22,80,443 && sudo ufw enable
+```
+
+## Автоматический деплой (CI/CD)
+
+При каждом push в репозиторий автоматически:
+#### Тестирование
+
+    Запускаются все тесты Django
+
+    Проверяется качество кода (flake8)
+
+    Используется PostgreSQL + Redis
+
+#### Деплой
+
+    develop ветка → деплой на тестовый сервер
+
+    main ветка → деплой на продакшен сервер
+
+#### В Secrets в GitHub необходимо добавить:
+
+    SECRET_KEY - секретный ключ Django
+
+    SERVER_IP - IP вашего сервера
+
+    SSH_PRIVATE_KEY - приватный SSH ключ
+
+    DOCKERHUB_USERNAME и DOCKERHUB_TOKEN - для Docker Registry
 
 ## Автор
 
