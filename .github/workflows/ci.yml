@@ -32,7 +32,6 @@ jobs:
           USE_SQLITE: "true"
 
         run: |
-          poetry run python manage.py migrate  # Применение миграций БД
           poetry run python manage.py test  # Запуск тестов Django
 
 
