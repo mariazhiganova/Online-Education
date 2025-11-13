@@ -45,6 +45,9 @@ jobs:
         with:
           python-version: '3.11'  # Версия Python (должна совпадать с проектом)
 
+      - name: Wait for database
+        run: sleep 10
+
       # Шаг 3: Установка зависимостей через Poetry
       - name: Install dependencies
         run: |
