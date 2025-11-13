@@ -38,7 +38,7 @@ class MaterialsTestCase(APITestCase):
         }
 
         response = self.client.post(
-            reverse('materials:lesson-create'),
+            reverse('materials:lessons_create'),
             data=data
         )
 
@@ -47,7 +47,7 @@ class MaterialsTestCase(APITestCase):
     def test_retrieve_lesson(self):
         """Тестирование просмотра одного урока"""
         response = self.client.get(
-            reverse('materials:lesson-details', kwargs={'pk': self.existing_lesson_1.id})
+            reverse('materials:lessons_details', kwargs={'pk': self.existing_lesson_1.id})
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -58,7 +58,7 @@ class MaterialsTestCase(APITestCase):
             'video_url': 'https://youtu.be/test/2/new/'
         }
         response = self.client.patch(
-            reverse('materials:lesson-update', kwargs={'pk': self.existing_lesson_2.id}),
+            reverse('materials:lessons_update', kwargs={'pk': self.existing_lesson_2.id}),
             data=data
         )
 
@@ -67,7 +67,7 @@ class MaterialsTestCase(APITestCase):
     def test_list_lesson(self):
         """Тестирование просмотра списка уроков"""
         response = self.client.get(
-            reverse('materials:lesson-list')
+            reverse('materials:lessons_list')
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -75,7 +75,7 @@ class MaterialsTestCase(APITestCase):
     def test_list_delete(self):
         """Тестирование удаления урока"""
         response = self.client.delete(
-            reverse('materials:lesson-delete', kwargs={'pk': self.existing_lesson_2.id})
+            reverse('materials:lessons_delete', kwargs={'pk': self.existing_lesson_2.id})
         )
 
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
