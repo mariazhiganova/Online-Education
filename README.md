@@ -113,6 +113,7 @@ http://localhost:8000/redoc/
 ```
 
 ## Настройка удаленного сервера
+
 #### Требования к серверу
 
     Ubuntu 20.04+
@@ -124,6 +125,7 @@ http://localhost:8000/redoc/
 #### Установка на сервер
 
 ## Обновление и установка Docker
+
 ```
 sudo apt update && sudo apt upgrade -y
 curl -fsSL https://get.docker.com -o get-docker.sh
@@ -131,16 +133,19 @@ sudo sh get-docker.sh
 ```
 
 ## Установка Docker Compose
+
 ```
 sudo apt install docker-compose-plugin
 ```
 
 ## Добавление пользователя в группу docker
+
 ```
 sudo usermod -aG docker $USER
 ```
 
 ## Настройка безопасности
+
 ```
 SSH доступ только по ключам
 
@@ -150,6 +155,7 @@ Firewall: sudo ufw allow 22,80,443 && sudo ufw enable
 ## Автоматический деплой (CI/CD)
 
 При каждом push в репозиторий автоматически:
+
 #### Тестирование
 
     Запускаются все тесты Django
@@ -173,6 +179,10 @@ Firewall: sudo ufw allow 22,80,443 && sudo ufw enable
     SSH_PRIVATE_KEY - приватный SSH ключ
 
     DOCKERHUB_USERNAME и DOCKERHUB_TOKEN - для Docker Registry
+
+## Доступ к приложению
+
+Приложение доступно по IP: `158.160.154.189`
 
 ## Автор
 
