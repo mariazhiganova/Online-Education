@@ -185,7 +185,6 @@ Firewall: sudo ufw allow 22,80,443 && sudo ufw enable
 Приложение доступно по IP: `158.160.154.189`
 
 ## Автор
-
 **Мария Жиганова** - Backend Developer (Python)
 
 ```
