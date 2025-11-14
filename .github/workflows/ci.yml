@@ -105,62 +105,23 @@ jobs:
       - name: Run flake8
         run: flake8 .  # Проверка всего кода на соответствие PEP8
 
-  # Job для деплоя в develop-окружение
-  deploy_develop:
-    runs-on: ubuntu-latest
-    needs: [ test, lint ]  # Зависит от успешного выполнения test и lint jobs
+  deploy:
+    runs-on: ubuntu-latest  # Запускать на виртуальной машине Ubuntu
+    needs: [ test, lint ]     # Запускать только после успешного выполнения тестов и линтинга
 
     steps:
+      # Клонирование кода из репозитория
       - name: Check out code
         uses: actions/checkout@v4
 
-      # Сборка Docker образа для develop
-      - name: Build Docker image for develop
-        run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/onlineeducation:develop .
-
-      # Деплой на сервер через SSH
-      - name: Deploy to Server (develop)
-        uses: appleboy/ssh-action@master
+      # Деплой на удаленный сервер через SSH
+      - name: Deploy to Server
+        uses: appleboy/ssh-action@master  # Используем Action для SSH подключения
         with:
-          host: ${{ secrets.SERVER_IP }}  # IP адрес сервера из secrets
-          username: maria  # Имя пользователя на сервере
-          key: ${{ secrets.SSH_PRIVATE_KEY }}  # Приватный SSH ключ
-          script: |  # Команды выполняемые на сервере
-            cd /home/maria/Online-Education  # Переход в директорию проекта
-            docker compose down  # Остановка текущих контейнеров
-            docker compose up -d  # Запуск новых контейнеров в фоне
-
-  # Job для деплоя в production-окружение
-  deploy_production:
-    runs-on: ubuntu-latest
-    needs: [ test, lint ]  # Зависит от успешного выполнения test и lint jobs
-    if: github.ref == 'refs/heads/main'  # Выполнять только для ветки main
-
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v4
-
-      # Авторизация в Docker Hub
-      - name: Log in to Docker Hub
-        run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
-
-      # Сборка Docker образа с уникальным тегом (SHA коммита)
-      - name: Build Docker image for production
-        run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/onlineeducation:${{ github.sha }} .
-
-      # Пуш образа в Docker Hub
-      - name: Push Docker image to Docker Hub
-        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/onlineeducation:${{ github.sha }}
-
-      # Деплой на production сервер
-      - name: Deploy to Server (production)
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SERVER_IP }}
-          username: maria
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd /home/maria/Online-Education
-            docker compose down  # Остановка старых контейнеров
-            docker compose pull  # Загрузка нового образа из Docker Hub
-            docker compose up -d  # Запуск обновленных контейнеров
+          host: ${{ secrets.SERVER_IP }}      # IP адрес сервера из защищенных переменных
+          username: maria                     # Имя пользователя на сервере
+          key: ${{ secrets.SSH_PRIVATE_KEY }} # Приватный SSH ключ для доступа
+          script: |  # Команды, которые выполнятся на сервере
+            cd /home/maria/Online-Education    # Переход в папку проекта
+            docker compose down                # Остановка текущих контейнеров
+            docker compose up -d               # Запуск новых контейнеров в фоне
