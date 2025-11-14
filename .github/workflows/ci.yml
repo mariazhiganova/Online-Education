@@ -109,7 +109,6 @@ jobs:
   deploy_develop:
     runs-on: ubuntu-latest
     needs: [ test, lint ]  # Зависит от успешного выполнения test и lint jobs
-    if: github.ref == 'refs/heads/develop'  # Выполнять только для ветки develop
 
     steps:
       - name: Check out code
