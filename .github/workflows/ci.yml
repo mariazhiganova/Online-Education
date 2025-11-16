@@ -1,0 +1,127 @@
+name: Django CI/CD Pipeline  # Название workflow, отображается в GitHub Actions
+
+on: [ push, pull_request ]  # Триггеры: запуск при push и создании pull request
+
+jobs:
+  # Job для запуска тестов
+  test:
+    runs-on: ubuntu-latest  # Запускать на последней версии Ubuntu
+
+    # ↓ ДОБАВЬ СЕКЦИЮ services ДЛЯ POSTGRESQL ↓
+    services:
+      # Сервис PostgreSQL для тестовой базы данных
+      postgres:
+        # Используем официальный образ PostgreSQL 15 версии
+        image: postgres:15
+        # Переменные окружения для настройки PostgreSQL
+        env:
+          # Имя базы данных, которая будет создана при запуске
+          POSTGRES_DB: test_db
+          # Имя пользователя БД (стандартный пользователь postgres)
+          POSTGRES_USER: postgres
+          # Пароль пользователя БД
+          POSTGRES_PASSWORD: postgres
+          # Разрешаем подключения без пароля для localhost (безопасно в CI/CD)
+          POSTGRES_HOST_AUTH_METHOD: trust
+        # Настройки health check для автоматической проверки готовности БД
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        # Пробрасываем порт 5432 из контейнера на хост (runner)
+        ports:
+          - 5432:5432
+
+    steps:
+      # Шаг 1: Клонирование репозитория
+      - name: Check out code
+        uses: actions/checkout@v4  # Action для клонирования кода
+
+      # Шаг 2: Установка Python
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'  # Версия Python (должна совпадать с проектом)
+
+      # Шаг 3: Ожидание готовности PostgreSQL
+      - name: Wait for PostgreSQL
+        run: |
+          # Обновляем пакеты и устанавливаем PostgreSQL клиент
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+          # Ждем пока PostgreSQL будет готов принимать подключения (макс 60 секунд)
+          timeout 60s bash -c 'until pg_isready -h localhost -p 5432; do echo "Waiting for PostgreSQL..."; sleep 2; done'
+          echo "PostgreSQL is ready!"
+
+      # Шаг 4: Установка зависимостей через Poetry
+      - name: Install dependencies
+        run: |
+          pip install poetry  # Установка менеджера зависимостей Poetry
+          poetry install --no-root  # Установка зависимостей проекта (без текущего пакета)
+
+      # Шаг 5: Запуск миграций и тестов
+      - name: Run migrations and tests
+        env:
+          # Имя базы данных (должно совпадать с POSTGRES_DB выше)
+          DATABASE_NAME: test_db
+          # Пользователь БД (должен совпадать с POSTGRES_USER выше)
+          DATABASE_USER: postgres
+          # Пароль БД (должен совпадать с POSTGRES_PASSWORD выше)
+          DATABASE_PASSWORD: postgres
+          # Хост БД - localhost, так как PostgreSQL запущен в том же runner
+          DATABASE_HOST: localhost
+          # Порт БД - 5432, так как мы пробросили этот порт
+          DATABASE_PORT: 5432
+          # Секретный ключ Django из GitHub Secrets
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          # Режим отладки выключен для тестов
+          DEBUG: "False"
+        run: |
+          # Применяем миграции к тестовой базе данных
+          poetry run python manage.py migrate
+          # Запускаем тесты Django
+          poetry run python manage.py test
+
+
+  # Job для проверки качества кода (линтер)
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      # Установка линтера flake8
+      - name: Install flake8
+        run: pip install flake8
+
+      # Запуск линтера для проверки стиля кода
+      - name: Run flake8
+        run: flake8 .  # Проверка всего кода на соответствие PEP8
+
+  deploy:
+    runs-on: ubuntu-latest  # Запускать на виртуальной машине Ubuntu
+    needs: [ test, lint ]     # Запускать только после успешного выполнения тестов и линтинга
+
+    steps:
+      # Клонирование кода из репозитория
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      # Деплой на удаленный сервер через SSH
+      - name: Deploy to Server
+        uses: appleboy/ssh-action@master  # Используем Action для SSH подключения
+        with:
+          host: ${{ secrets.SERVER_IP }}      # IP адрес сервера из защищенных переменных
+          username: maria                     # Имя пользователя на сервере
+          key: ${{ secrets.SSH_PRIVATE_KEY }} # Приватный SSH ключ для доступа
+          script: |  # Команды, которые выполнятся на сервере
+            cd /home/maria/Online-Education    # Переход в папку проекта
+            docker compose down                # Остановка текущих контейнеров
+            docker compose up -d               # Запуск новых контейнеров в фоне

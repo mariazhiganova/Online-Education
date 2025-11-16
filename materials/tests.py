@@ -1,3 +1,4 @@
+from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -9,6 +10,7 @@ class MaterialsTestCase(APITestCase):
 
     def setUp(self):
         self.user = CustomUser.objects.create_user(email='testuser@mail.com', password='testuser123')
+
         self.course = Course.objects.create(title='test course 1', description='test course', owner=self.user)
         self.existing_lesson_1 = Lesson.objects.create(
             title="Existing lesson",
@@ -37,7 +39,7 @@ class MaterialsTestCase(APITestCase):
         }
 
         response = self.client.post(
-            '/materials/lessons/create/',
+            reverse('materials:lessons_create'),
             data=data
         )
 
@@ -46,7 +48,7 @@ class MaterialsTestCase(APITestCase):
     def test_retrieve_lesson(self):
         """Тестирование просмотра одного урока"""
         response = self.client.get(
-            f'/materials/lessons/{self.existing_lesson_1.id}/details/'
+            reverse('materials:lessons_details', kwargs={'pk': self.existing_lesson_1.id})
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -57,7 +59,7 @@ class MaterialsTestCase(APITestCase):
             'video_url': 'https://youtu.be/test/2/new/'
         }
         response = self.client.patch(
-            f'/materials/lessons/{self.existing_lesson_2.id}/update/',
+            reverse('materials:lessons_update', kwargs={'pk': self.existing_lesson_2.id}),
             data=data
         )
 
@@ -66,7 +68,7 @@ class MaterialsTestCase(APITestCase):
     def test_list_lesson(self):
         """Тестирование просмотра списка уроков"""
         response = self.client.get(
-            '/materials/lessons/list/'
+            reverse('materials:lessons_list')
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -74,7 +76,7 @@ class MaterialsTestCase(APITestCase):
     def test_list_delete(self):
         """Тестирование удаления урока"""
         response = self.client.delete(
-            f'/materials/lessons/{self.existing_lesson_2.id}/delete/'
+            reverse('materials:lessons_delete', kwargs={'pk': self.existing_lesson_2.id})
         )
 
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
@@ -85,7 +87,7 @@ class MaterialsTestCase(APITestCase):
             'course_id': self.course.id
         }
         response = self.client.post(
-            '/materials/course/subscription/',
+            reverse('materials:course_subscription'),
             data=data
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
